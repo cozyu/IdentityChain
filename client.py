@@ -140,7 +140,7 @@ walletmenu = Menu(menubar)
 walletmenu.add_command(label="Generate private keys", command=new_privkeys)
 menubar.add_cascade(label="Wallet", menu=walletmenu)
 # Send section
-l1 = Label(text="Отправить", font="Arial 14")
+l1 = Label(text="Submit", font="Arial 14")
 l1.grid(column=1, row=0)
 
 lbl = Label(text="Recipient: ")
@@ -163,7 +163,7 @@ lbl3.grid(column=0, row=4)
 send_sk = Entry(width=50, text="Private key")
 send_sk.grid(column=1, row=4)
 
-send_button = Button(text="Отправить", command=send)
+send_button = Button(text="Submit", command=send)
 send_button.grid(column=1, row=5)
 
 # l1.pack(pady=10)
