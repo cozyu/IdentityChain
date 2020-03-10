@@ -267,19 +267,16 @@ class Blockchain(object):
         self.nodes = dict_object
 
     def mine(self, miner_address):
-        # Мы запускаем алгоритм подтверждения работы, чтобы получить следующее подтверждение…
-        last_block = self.load_block(self.block_count - 1)
+        # We run the confirmation algorithm to get the next confirmation ...        last_block = self.load_block(self.block_count - 1)
         proof = self.proof_of_work(last_block)
-
-        # Мы должны получить вознаграждение за найденное подтверждение
-        # Отправитель “0” означает, что узел заработал крипто-монету
+        # We must receive a reward for the confirmation found
+        # Sender “0” means that the node has earned a crypto coin
         self.new_transaction(
             sender="0",
             recipient=miner_address,
             amount=50,
         )
-        # Создаем новый блок, путем внесения его в цепь
-        previous_hash = self.hash(last_block)
+        # Create a new block by adding it to the chain        previous_hash = self.hash(last_block)
         block = self.new_block(proof, previous_hash)
 
     def discover_peers(self):

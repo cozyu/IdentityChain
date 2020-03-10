@@ -1,40 +1,146 @@
 import base64
 import json
 from tkinter import *
-
+import os
 import nacl
 import requests
 from flask import Flask
 
-exec(open("./Blockchain.py").read())
 
-app = Flask(__name__)
+#import modules
 
-root = Tk()
-root.title("PyCoin")
-root.geometry('435x150')
+window = Tk()
+window.title("ItsExceptional")
+window.geometry("300x200")
+window.config(background = "black", pady=10)
 
-nodes_w = None
-nodes_list = None
-pk_w = None
-a_w = None
 
-sk = None
-pk = None
-addresses_list = None
+lb1 = Label(window, text = "Login Form", bg = "black", fg="white", font=20)
+lb1.place(x=110, y=5)
 
-self_addr = "127.0.0.1"
-self_port = "5000"
+lb2_u = Label(window, text = "Username - ", bg="black", fg="white")
+lb2_u2 = Entry(window)
+lb2_u.place(x=10, y=40)
+lb2_u2.place(x=110, y=40)
 
-try:
-    # blockchain.load_chain()
-    # blockchain.load_pending_tx()
-    pass
-except:
-    print("Could not load chain from file")
-finally:
-    pass
-address = ""
+
+lb2_p = Label(window, text = "Password - ", bg="black", fg="white")
+lb2_p2 = Entry(window)
+lb2_p.place(x=10, y=80)
+lb2_p2.place(x=110,y=80)
+
+
+display = Label(window, text="Access : ", bg="black")
+
+bt = Button(window, text="Login")
+
+
+
+def dis():
+    user = lb2_u2.get()
+    pas = lb2_p2.get()
+    filo = open('register.txt').readlines()
+    for lino in filo:
+        if user == lino.split()[2]:
+            display.config(bg="green",fg="white", text="Access :Granted")
+            break
+        else:
+            display.config(bg="red",fg="white", text="Access :Denied")
+
+bt.config(command=dis)
+bt.place(x=110, y=120)
+
+
+def newsign():
+    sign=Tk()
+    sign.title("SignUp")
+    sign.geometry("300x200")
+    sign.config(background = "black", pady=10)
+
+    lbs = Label(sign, text = "SignUp", bg = "black", fg="white", font=20)
+    lbs.place(x=110, y=5)
+
+    lb2_s = Label(sign, text = "Username - ", bg="black", fg="white")
+    lb2_s2 = Entry(sign)
+    lb2_s.place(x=10, y=40)
+    lb2_s2.place(x=110, y=40)
+
+
+    lb2_ps = Label(sign, text = "Password - ", bg="black", fg="white")
+    lb2_ps2 = Entry(sign)
+    lb2_ps.place(x=10, y=80)
+    lb2_ps2.place(x=110,y=80)
+
+    dis = Label(sign, text ="", bg="black", fg="white")
+    
+    def reg():
+        username = lb2_s2.get()
+        pas = lb2_ps2.get()
+        
+        file =  open("register.txt","a")
+        fiIn = open('register.txt').readlines()
+
+
+        l=[] 
+        for lines in fiIn:
+            l.append(lines.split()[2])
+
+        if username in l:
+            print("Exists")
+            dis.config(text="User Exists", bg="green")
+
+        else:
+            print("not Exists")
+            file.write("Username = "+username+"\n")
+            file.write("Password = "+pas+"\n")
+            file.close()
+            dis.config(text = "Registered", bg="green")
+        
+    bts = Button(sign, text="Register", command=reg)
+    bts.place(x=110, y=120)
+    dis.place(x=100, y=150)
+
+    
+    window.destroy()
+
+bt2 = Button(window, text="SignUp", command=newsign)
+bt2.place(x=170, y=120)
+
+
+display.place(x=110, y=155)
+
+
+
+
+# exec(open("./Blockchain.py").read())
+
+# app = Flask(__name__)
+
+# root = Tk()
+# root.title("Identity Chain")
+# root.geometry('700x500')
+
+# nodes_w = None
+# nodes_list = None
+# pk_w = None
+# a_w = None
+
+# sk = None
+# pk = None
+# addresses_list = None
+
+# self_addr = "127.0.0.1"
+# self_port = "5000"
+
+# try:
+#     # blockchain.load_chain()
+#     # blockchain.load_pending_tx()
+#     pass
+# except:
+#     print("Could not load chain from file")
+# finally:
+#     pass
+# address = ""
 
 
 def save_blockchain():
@@ -129,53 +235,38 @@ def new_privkeys():
     pk_gen_new.pack(pady=10)
 
 
-menubar = Menu(root)
-root.config(menu=menubar)
+# fileMenu = Menu(menubar)
+# fileMenu.add_command(label="Save", command=save_blockchain)
+# fileMenu.add_command(label="List nodes", command=nodes_window)
+# menubar.add_cascade(label="File", menu=fileMenu)
+# walletmenu = Menu(menubar)
+# walletmenu.add_command(label="Generate private keys", command=new_privkeys)
+# menubar.add_cascade(label="Wallet", menu=walletmenu)
+# # Send section
+# l1 = Label(text="Submit", font="Arial 14")
+# l1.grid(column=1, row=0)
 
-fileMenu = Menu(menubar)
-fileMenu.add_command(label="Save", command=save_blockchain)
-fileMenu.add_command(label="List nodes", command=nodes_window)
-menubar.add_cascade(label="File", menu=fileMenu)
-walletmenu = Menu(menubar)
-walletmenu.add_command(label="Generate private keys", command=new_privkeys)
-menubar.add_cascade(label="Wallet", menu=walletmenu)
-# Send section
-l1 = Label(text="Submit", font="Arial 14")
-l1.grid(column=1, row=0)
+# lbl = Label(text="Recipient: ")
+# lbl.grid(column=0, row=1)
+# send_entry = Entry(width=50)
+# send_entry.grid(column=1, row=1)
 
-lbl = Label(text="Recipient: ")
-lbl.grid(column=0, row=1)
-send_entry = Entry(width=50)
-send_entry.grid(column=1, row=1)
+# lbl1 = Label(text="Amount: ")
+# lbl1.grid(column=0, row=2)
+# send_amount = Entry(width=50, text="Amount")
+# send_amount.grid(column=1, row=2)
 
-lbl1 = Label(text="Amount: ")
-lbl1.grid(column=0, row=2)
-send_amount = Entry(width=50, text="Amount")
-send_amount.grid(column=1, row=2)
+# lbl2 = Label(text="Public key: ")
+# lbl2.grid(column=0, row=3)
+# send_pk = Entry(width=50, text="Public key")
+# send_pk.grid(column=1, row=3)
 
-lbl2 = Label(text="Public key: ")
-lbl2.grid(column=0, row=3)
-send_pk = Entry(width=50, text="Public key")
-send_pk.grid(column=1, row=3)
+# lbl3 = Label(text="Private key: ")
+# lbl3.grid(column=0, row=4)
+# send_sk = Entry(width=50, text="Private key")
+# send_sk.grid(column=1, row=4)
 
-lbl3 = Label(text="Private key: ")
-lbl3.grid(column=0, row=4)
-send_sk = Entry(width=50, text="Private key")
-send_sk.grid(column=1, row=4)
+# send_button = Button(text="Submit", command=send)
+# send_button.grid(column=1, row=5)
 
-send_button = Button(text="Submit", command=send)
-send_button.grid(column=1, row=5)
-
-# l1.pack(pady=10)
-# lbl.pack()
-# send_entry.pack()
-# lbl1.pack()
-# send_amount.pack()
-# lbl2.pack()
-# send_pk.pack()
-# lbl3.pack()
-# send_sk.pack()
-# send_button.pack(pady=10)
-
-root.mainloop()
-nodes_w.mainloop()
+# nodes_w.mainloop()
