@@ -54,7 +54,7 @@ for blockindex in range(0, blockchain.block_count - 1):
         try:
             blockchain.resolve_conflicts()
         except:
-            print("DA I POHUY")
+            print("Load Nodes exception")
 
 save_nodes()
 save_all()
