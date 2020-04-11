@@ -44,7 +44,7 @@ def sendVote(address, SK, recipientPublicKey, amount):
     sig = SK.sign(msg.encode())
     sig = sig[:len(sig) - len(msg)]
     j['signature'] = base64.b64encode(sig).decode()
-    req = requests.post(f'http://{self_addr}:{self_port}/vote/new', json=j)
+    req = requests.post(f'http://{self_addr}:{self_port}/transactions/new', json=j)
     print("Transaction: ", req.content.decode())
     # save_blockchain()
     # load_blockchain()

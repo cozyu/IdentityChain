@@ -139,7 +139,7 @@ def new_transaction():
 
 # 
 @app.route('/vote/new', methods=['POST'])
-def new_transaction():
+def new_vote():
     values = request.get_json()
 
     # Check that the required fields are in the POST'ed data
