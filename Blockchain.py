@@ -250,19 +250,19 @@ class Blockchain(object):
         self.chain = dict_object
 
     def save_pending_tx(self):
-        with open('pending_txs.dat', 'w') as outfile:
+        with open('pendingtx/pending_txs.dat', 'w') as outfile:
             json.dump(self.current_transactions, outfile)
 
     def load_pending_tx(self):
-        with open('pending_txs.dat', 'r') as file_object:
+        with open('pendingtx/pending_txs.dat', 'r') as file_object:
             self.current_transactions = json.load(file_object)
 
     def save_nodes(self):
-        with open('nodes.dat', 'w') as outfile:
+        with open('nodes/nodes.dat', 'w') as outfile:
             json.dump(self.nodes, outfile)
 
     def load_nodes(self):
-        file_object = open('nodes.dat', 'r')
+        file_object = open('nodes/nodes.dat', 'r')
         dict_object = json.load(file_object)
         self.nodes = dict_object
 

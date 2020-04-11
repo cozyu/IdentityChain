@@ -7,17 +7,60 @@ import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
 
+import base64
+import json
+
+import nacl
+import requests
+from flask import Flask
+
+exec(open("./Blockchain.py").read())
+
+app = Flask(__name__)
+nodes_w = None
+nodes_list = None
+pk_w = None
+a_w = None
+
+sk = None
+pk = None
+addresses_list = None
+
+self_addr = "127.0.0.1"
+self_port = "5000"
+
+
 # global variables
+# root
 root = tk.Tk()
+
+# tkEntry
 uname = tk.Entry(root)
-unameLabel = tk.Label(root)
-pwordLabel = tk.Label(root)
 pword = tk.Entry(root)
+pubKey = tk.Entry(root)
+privKey = tk.Entry(root)
+electionID = tk.Entry(root)
+voteChoice = tk.Entry(root)
+
+# buttons
 loginButton = tk.Button(root)
 regButton = tk.Button(root)
+voteButton = tk.Button(root)
+
+# labels
+unameLabel = tk.Label(root)
+pwordLabel = tk.Label(root)
+pubKeyLabel = tk.Label(root)
+privKeyLabel = tk.Label(root)
+electionLabel = tk.Label(root)
+
+# vars
 username = StringVar()
 password = StringVar()
-
+senderPubKey = StringVar()
+senderPrivKey = StringVar()
+elecID = StringVar()
+voteVar = StringVar()
 
 def main():
     loginScreen()
@@ -51,30 +94,64 @@ def loginScreen():
 	regButton.pack()
 
 def dashboard():
-	#welcome = messagebox.showinfo("Welcome", "Welcome, " + uname.get() + "!")
-
-	hello = tk.Label(root, text="" + username.get()+ ", Welcome to the Indentity Chain Dashbaord")
+	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Dashbaord\n\nCast a vote!\n---------------", font='Helvetica 18 bold')
 	hello.pack()
 
-	def switch_back():
-		root.configure(bg="#f1f1f1")
-		hello.configure(bg="#f1f1f1")
 
-	def switchColor():
-		global color
-		color = root.cget('bg')
-		root.configure(bg="#887345")
-		hello.configure(bg="#887345")
+	# labels
+	pubKeyLabel = tk.Label(root, text=username.get()+"'s Public Key:")
+	privKeyLabel = tk.Label(root, text=username.get()+"'s Private Key:")
+	electionLabel = tk.Label(root, text="Election Key:")
+	voteLabel = tk.Label(root, text="Select your Vote")
+	
+	# EntryBoxes
+	pubKey = tk.Entry(root, textvariable = senderPubKey)
+	privKey = tk.Entry(root, textvariable = senderPrivKey)
+	electionID = tk.Entry(root, textvariable = elecID)
+	voteChoice = tk.Entry(root, textvariable = voteVar)
+	
+	# clears fields
+	pubKey.delete(0, END)
+	privKey.delete(0, END)
+	electionID.delete(0, END)
+	voteChoice.delete(0, END)
 
-		if color == "#887345":
-			root.after(1, switch_back)
+	# button
+	voteButton = tk.Button(root, text="Vote", command=vote)
+	
 
-	switch = tk.Button(root, text="Switch", command=switchColor)
-	switch.pack()
+	# display
+	pubKeyLabel.pack()
+	pubKey.pack()
+	privKeyLabel.pack()
+	privKey.pack()
+	electionLabel.pack()
+	electionID.pack()
+	voteLabel.pack()
+	voteChoice.pack()
+	voteButton.pack()
+
+
+def vote():
+    SK = nacl.signing.SigningKey(senderPrivKey.get(), encoder=nacl.encoding.HexEncoder)
+    j = {'sender': senderPubKey.get(),
+         'recipient': elecID.get(),
+         'amount': float(voteVar.get())}
+    msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
+    sig = SK.sign(msg.encode())
+    sig = sig[:len(sig) - len(msg)]
+    j['signature'] = base64.b64encode(sig).decode()
+    req = requests.post(f'http://{self_addr}:{self_port}/transactions/new', json=j)
+    print("Transaction: ", req.content.decode())
+    messagebox.showinfo("", "Thanks, "+ username.get() +"! Your vote has been cast!")
+    clearView()
+    dashboard()
+
+	
 
 def checkLogin():
 	try:
-		f = open(username.get() + '.txt', 'r')
+		f = open('users/' +username.get() + '.txt', 'r')
 		data = f.readlines()
 		getUname = data[0].rstrip()
 		getPword = data[1].rstrip()
@@ -113,7 +190,7 @@ def regUser():
 	regButton.pack()
 	
 def saveUser():
-	f = open(username.get() + '.txt', 'w')
+	f = open('users/' + username.get() + '.txt', 'w')
 	f.write(username.get())
 	f.write("\n")
 	f.write(password.get())

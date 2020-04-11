@@ -66,7 +66,7 @@ def send():
 
 
 def save_nodes():
-    f = open("nodes.dat", "w")
+    f = open("nodes/nodes.dat", "w")
     lst = []
     lst = nodes_list.get(1.0, END).splitlines()
     json.dump(lst, f)
@@ -74,7 +74,7 @@ def save_nodes():
 
 
 def load_nodes():
-    file_object = open('nodes.dat', 'r')
+    file_object = open('nodes/nodes.dat', 'r')
     nodes = json.load(file_object)
     for e in nodes:
         nodes_list.insert(INSERT, e + "\n")
