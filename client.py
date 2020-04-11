@@ -50,10 +50,10 @@ def load_blockchain():
 
 
 def send():
-    address = send_pk.get()
-    SK = nacl.signing.SigningKey(send_sk.get(), encoder=nacl.encoding.HexEncoder)
+    address = senderPublicKey.get()
+    SK = nacl.signing.SigningKey(senderPrivateKey.get(), encoder=nacl.encoding.HexEncoder)
     j = {'sender': address,
-         'recipient': send_entry.get(),
+         'recipient': recipientPublicKey.get(),
          'amount': float(send_amount.get())}
     msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
     sig = SK.sign(msg.encode())
@@ -145,8 +145,8 @@ l1.grid(column=1, row=0)
 
 lbl = Label(text="Recipient: ")
 lbl.grid(column=0, row=1)
-send_entry = Entry(width=50)
-send_entry.grid(column=1, row=1)
+recipientPublicKey = Entry(width=50)
+recipientPublicKey.grid(column=1, row=1)
 
 lbl1 = Label(text="Amount: ")
 lbl1.grid(column=0, row=2)
@@ -155,26 +155,26 @@ send_amount.grid(column=1, row=2)
 
 lbl2 = Label(text="Public key: ")
 lbl2.grid(column=0, row=3)
-send_pk = Entry(width=50, text="Public key")
-send_pk.grid(column=1, row=3)
+senderPublicKey = Entry(width=50, text="Public key")
+senderPublicKey.grid(column=1, row=3)
 
 lbl3 = Label(text="Private key: ")
 lbl3.grid(column=0, row=4)
-send_sk = Entry(width=50, text="Private key")
-send_sk.grid(column=1, row=4)
+senderPrivateKey = Entry(width=50, text="Private key")
+senderPrivateKey.grid(column=1, row=4)
 
-send_button = Button(text="Отправить", command=send)
+send_button = Button(text="Send TX", command=send)
 send_button.grid(column=1, row=5)
 
 # l1.pack(pady=10)
 # lbl.pack()
-# send_entry.pack()
+# recipientPublicKey.pack()
 # lbl1.pack()
 # send_amount.pack()
 # lbl2.pack()
-# send_pk.pack()
+# senderPublicKey.pack()
 # lbl3.pack()
-# send_sk.pack()
+# senderPrivateKey.pack()
 # send_button.pack(pady=10)
 
 root.mainloop()
