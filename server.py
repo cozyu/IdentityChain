@@ -111,6 +111,56 @@ def new_transaction():
     return jsonify(response), 201
 
 
+
+# create a new election with start date - end date, list of candidates, 
+# and public key to identify where users send votes to
+@app.route('/election/new', methods=['POST'])
+def new_transaction():
+    values = request.get_json()
+
+    # Check that the required fields are in the POST'ed data
+    required = ['startDate', 'endDate', 'candidates', 'signature']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+
+    sig = values['signature']
+    print(sig)
+    print(type(sig))
+    sig = sig
+
+    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'], sig)
+
+    if index:
+        response = {'message': f'Transaction will be added to Block {index}'}
+    else:
+        response = {'message': f'Transaction failed'}
+    return jsonify(response), 201
+
+
+# 
+@app.route('/vote/new', methods=['POST'])
+def new_transaction():
+    values = request.get_json()
+
+    # Check that the required fields are in the POST'ed data
+    required = ['sender', 'recipient', 'vote', 'signature']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+
+    sig = values['signature']
+    print(sig)
+    print(type(sig))
+    sig = sig
+
+    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'], sig)
+
+    if index:
+        response = {'message': f'Transaction will be added to Block {index}'}
+    else:
+        response = {'message': f'Transaction failed'}
+    return jsonify(response), 201
+
+
 @app.route('/nodes/register', methods=['POST'])
 def register_nodes():
     values = request.get_json()
