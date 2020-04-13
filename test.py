@@ -35,12 +35,27 @@ def load_blockchain():
     # blockchain.load_pending_tx()
 
 
-def sendVote(address, SK, recipientPublicKey, amount):
+def sendVote(address, SK, recipientPublicKey, vote):
     SK = nacl.signing.SigningKey(SK, encoder=nacl.encoding.HexEncoder)
     j = {'sender': address,
          'recipient': recipientPublicKey,
-         'amount': float(amount)}
-    msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
+         'amount': 0,
+         'script': {'type':1,'vote':vote}}
+    msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
+    sig = SK.sign(msg.encode())
+    sig = sig[:len(sig) - len(msg)]
+    j['signature'] = base64.b64encode(sig).decode()
+    req = requests.post(f'http://{self_addr}:{self_port}/vote/new', json=j)
+    print("Transaction: ", req.content.decode())
+    # save_blockchain()
+    # load_blockchain()
+
+def send(address,SK, recipientPublicKey,amount):
+    j = {'sender': address,
+         'recipient': recipientPublicKey,
+         'amount': float(amount),
+         'script': None}
+    msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
     sig = SK.sign(msg.encode())
     sig = sig[:len(sig) - len(msg)]
     j['signature'] = base64.b64encode(sig).decode()
@@ -133,7 +148,13 @@ def new_privkeys():
 bobPubKey = '15c0486a008d3d8e0f920222df7d18215d90c2cfa489f133a7a583e04c575007'
 bobPrivKey = 'f4483f68ded20a9907cb3b8c348524f4d238c1b162471d4591c3705e56d15301'
 alicePublicKey = '9e933a6f4142ac06d2625625747ac117ef3998e9d2a8fef4f578ddc5e18e6908'
+alicePrivKey = 'c0e184c81e3c8b8664ade34aa8f87b6727233dc12ad72df113563baeb99e8a2c'
 
-sendVote(bobPubKey, bobPrivKey, alicePublicKey, 10)
+sendVote(alicePublicKey, alicePrivKey, bobPubKey, 1)
+#sendVote(alicePublicKey, alicePrivKey, bobPubKey, 1)
+sendVote(bobPubKey, bobPrivKey, bobPubKey, 2)
+#send(bobPubKey,bobPrivKey,alicePublicKey,10)
+sendVote(bobPubKey, bobPrivKey, alicePublicKey, 3)
+sendVote(alicePublicKey, alicePrivKey, alicePublicKey, 4)
 
 
