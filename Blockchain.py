@@ -53,6 +53,61 @@ class Blockchain(object):
                 response[t['sender']] -= t['amount']
                 response[t['recipient']] += t['amount']
         return response
+
+    # script type { 1: vote, 2:election }
+    def vote_result(self):
+        self.block_count = self.get_block_count()
+        response = {}
+        for number in range(0, self.block_count):
+            c = self.load_block(number)
+            for t in c['transactions']:
+                if 'script' not in t:
+                    continue
+
+                script= t['script']
+                if not script:
+                    continue
+                if 'type' not in script:
+                    continue
+                if 'vote' not in script:
+                    continue
+                # check script type  { 1: vote, 2:election }
+                if script['type'] != 1:
+                    continue
+                if t['recipient'] not in response:
+                    response[t['recipient']] = {}
+
+                candidate=script['vote']
+                
+                if candidate not in response[t['recipient']]:
+                    response[t['recipient']][candidate] = {'score':0,'voter':[]}
+                response[t['recipient']][candidate]['score'] += 1
+                # Remove the line below when you need to hide voting history
+                response[t['recipient']][candidate]['voter'].append(t['sender'])
+
+        # Transactions not yet in the chain (not sure right way to include these..)
+        for t in self.current_transactions:
+            if 'script' not in t:
+                continue
+
+            script= t['script']
+            if not script:
+                continue
+            if 'vote' not in script:
+                continue
+            if t['recipient'] not in response:
+                response[t['recipient']] = {}
+
+            candidate=script['vote']
+            
+            if candidate not in response[t['recipient']]:
+                response[t['recipient']][candidate] = {'score':0,'voter':[]}
+            response[t['recipient']][candidate]['score'] += 1
+            # Remove the line below when you need to hide voting history
+            response[t['recipient']][candidate]['voter'].append(t['sender'])
+        #print (response)
+        return response
+
     def new_block(self, proof, previous_hash=None, time_stamp=None):
         block = {
             'index': self.block_count,
@@ -69,6 +124,7 @@ class Blockchain(object):
         return block
 
     def new_transaction(self, sender, recipient, amount, signature=None):
+        return new_script_transaction(self,sender,recipient,amount,None,signature)
         if (sender != "0") and (sender not in self.balances()):
             return (False, 'Sender not registered with blockchain')
 
@@ -91,6 +147,44 @@ class Blockchain(object):
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
+            'signature': sig,
+        })
+        self.save_pending_tx()
+        return self.last_block['index'] + 1
+
+    def register_user(self,sender):
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': '0',
+            'amount': 0,
+            'script': None,
+            'signature': None,
+        })
+        
+    def new_script_transaction(self, sender, recipient, amount, script=None, signature=None):
+        if (sender != "0") and (sender not in self.balances()):
+            self.register_user(sender)
+        
+        # Check sufficient funds
+        if (sender != "0") and (self.balances()[sender] < amount):
+            return (False, 'Insufficient amount in account')
+        if (amount < 0):
+            return (False, 'Negative amount of coins')
+
+        if sender != "0":
+            j = {'sender': sender, 'recipient': recipient, 'amount': amount, 'script': script}
+            msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
+            mysignature = base64.b64decode(signature.encode())
+            pub_key = nacl.signing.VerifyKey(sender, encoder=nacl.encoding.HexEncoder)
+            if not pub_key.verify(msg.encode(), mysignature):
+                print("Invalid signature")
+                return (False, "Invalid signature")
+        sig = signature
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+            'script': script,
             'signature': sig,
         })
         self.save_pending_tx()
@@ -124,32 +218,41 @@ class Blockchain(object):
         parsed_url = urlparse(address)
         self.nodes.append(parsed_url.netloc)
 
+
+    def validate_signature(self,tx):
+        signature = tx['signature']
+        signature = base64.b64decode(signature.encode())
+        pub_key = nacl.signing.VerifyKey(tx['sender'], encoder=nacl.encoding.HexEncoder)
+
+        msg=""
+        if 'script' in tx:
+          j = {'sender': tx['sender'], 'recipient': tx['recipient'], 'amount': tx['amount'],'script': tx['script']}
+          msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
+        else:
+          j = {'sender': tx['sender'], 'recipient': tx['recipient'], 'amount': tx['amount']}
+          msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
+
+        return pub_key.verify(msg.encode(), signature)
+
     def validate_block(self, my_block):
-        last_block = self.load_block(self.block_count - 1)
+        if my_block==0:
+          return True
+        last_block = self.load_block(my_block - 1)
         block = self.load_block(my_block)
-        # my_block = self.load_block(block)
         block_txs = block['transactions']
         for tx in block_txs:
-            if not tx['sender'] == '0':
-                signature = tx['signature']
-                signature = base64.b64decode(signature.encode())
-                pub_key = nacl.signing.VerifyKey(tx['sender'], encoder=nacl.encoding.HexEncoder)
-
-                j = {'sender': tx['sender'], 'recipient': tx['recipient'], 'amount': tx['amount']}
-                msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
-
-                try:
-                    okay = pub_key.verify(msg.encode(), signature)
-                except BadSignatureError:
-                    okay = False
-                if not okay:
-                    print(f"Invalid signature at block {block['index']}")
-                    return False
+            if not tx['sender'] == '0' and not tx['recipient'] =='0':
+              try:
+                  okay= self.validate_signature(tx)
+              except BadSignatureError:
+                  okay = False
+              if not okay:
+                  print(f"Invalid signature at block {block['index']}")
+                  return False
         if block['previous_hash'] != self.hash(last_block):
             return False
         if not self.valid_proof(last_block['proof'], block['proof'], block['previous_hash']):
             return False
-        # last_block = block
         return True
 
     def get_node_block_by_index(self, node, index):
@@ -172,7 +275,8 @@ class Blockchain(object):
         # my_block = self.load_block(block)
         block_txs = block['transactions']
         for tx in block_txs:
-            if not tx['sender'] == '0':
+            #if not tx['sender'] == '0':
+            if not tx['sender'] == '0' and not tx['recipient'] =='0':
                 signature = tx['signature']
                 signature = base64.b64decode(signature.encode())
                 pub_key = nacl.signing.VerifyKey(tx['sender'], encoder=nacl.encoding.HexEncoder)
@@ -271,7 +375,7 @@ class Blockchain(object):
         proof = self.proof_of_work(self.last_block)
         # We must receive a reward for the confirmation found
         # Sender “0” means that the node has earned a crypto coin
-        self.new_transaction(
+        self.new_script_transaction(
             sender="0",
             recipient=miner_address,
             amount=50,

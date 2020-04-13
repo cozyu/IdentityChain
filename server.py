@@ -16,7 +16,7 @@ def load_all():
 
 def save_all():
     try:
-        # blockchain.save_chain()
+        blockchain.save_chain()
         blockchain.save_pending_tx()
     except:
         print("Could not save chain to file")
@@ -61,6 +61,25 @@ save_all()
 
 app = Flask(__name__)
 
+def new_script_transaction():
+    values = request.get_json()
+
+    # Check that the required fields are in the POST'ed data
+    required = ['sender', 'recipient', 'amount','script', 'signature']
+    if not all(k in values for k in required):
+        return 'Missing values', 400
+
+    sig = values['signature']
+
+    index = blockchain.new_script_transaction(values['sender'], values['recipient'], values['amount'],values['script'], sig)
+
+    if index:
+        response = {'message': f'Transaction will be added to Block {index}'}
+    else:
+        response = {'message': f'Transaction failed'}
+    return jsonify(response), 201
+
+
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
@@ -87,6 +106,10 @@ def balances():
     response = blockchain.balances()
     return jsonify(response), 200
 
+@app.route('/vote_result', methods=['GET'])
+def vote_result():
+    response = blockchain.vote_result()
+    return jsonify(response), 200
 
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
@@ -98,9 +121,6 @@ def new_transaction():
         return 'Missing values', 400
 
     sig = values['signature']
-    print(sig)
-    print(type(sig))
-    sig = sig
 
     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'], sig)
 
@@ -115,7 +135,7 @@ def new_transaction():
 # create a new election with start date - end date, list of candidates, 
 # and public key to identify where users send votes to
 @app.route('/election/new', methods=['POST'])
-def new_transaction():
+def new_election_transaction():
     values = request.get_json()
 
     # Check that the required fields are in the POST'ed data
@@ -137,28 +157,25 @@ def new_transaction():
     return jsonify(response), 201
 
 
-# 
 @app.route('/vote/new', methods=['POST'])
-def new_vote():
+def new_vote_transaction():
+    #
+    # if input verification is needed, the code is here  
+    #
     values = request.get_json()
-
-    # Check that the required fields are in the POST'ed data
-    required = ['sender', 'recipient', 'vote', 'signature']
+    required = ['sender', 'recipient', 'amount','script', 'signature']
     if not all(k in values for k in required):
         return 'Missing values', 400
 
-    sig = values['signature']
-    print(sig)
-    print(type(sig))
-    sig = sig
-
-    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'], sig)
-
-    if index:
-        response = {'message': f'Transaction will be added to Block {index}'}
-    else:
-        response = {'message': f'Transaction failed'}
-    return jsonify(response), 201
+    recipient=values['recipient'] 
+    sender=values['sender'] 
+    vote_result=blockchain.vote_result()
+    if recipient in vote_result:
+      print(vote_result[recipient])
+      for index,content in vote_result[recipient].items():
+        if sender in content['voter']:
+          return 'Duplicated voting', 500
+    return new_script_transaction()
 
 
 @app.route('/nodes/register', methods=['POST'])
