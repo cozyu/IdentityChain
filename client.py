@@ -1,6 +1,17 @@
+import os
+import sys
+import time
+import string
+import random
+import tkinter as tk
+import tkinter.ttk as ttk
+from tkinter import *
+from tkinter import messagebox
+from tkcalendar import Calendar, DateEntry
+
+
 import base64
 import json
-from tkinter import *
 
 import nacl
 import requests
@@ -9,11 +20,6 @@ from flask import Flask
 exec(open("./Blockchain.py").read())
 
 app = Flask(__name__)
-
-root = Tk()
-root.title("PyCoin")
-root.geometry('435x150')
-
 nodes_w = None
 nodes_list = None
 pk_w = None
@@ -26,156 +32,248 @@ addresses_list = None
 self_addr = "127.0.0.1"
 self_port = "5000"
 
-try:
-    # blockchain.load_chain()
-    # blockchain.load_pending_tx()
-    pass
-except:
-    print("Could not load chain from file")
-finally:
-    pass
-address = ""
+
+# global variables
+# root
+root = tk.Tk()
+style = ttk.Style(root)
+style.theme_use('clam')
+candidateList = []
 
 
-def save_blockchain():
-    pass
-    # blockchain.save_chain()
-    # blockchain.save_pending_tx()
+# tkEntry
+uname = tk.Entry(root)
+pword = tk.Entry(root)
+pubKey = tk.Entry(root)
+privKey = tk.Entry(root)
+electionID = tk.Entry(root)
+voteChoice = tk.Entry(root)
+candidateEntry = tk.Entry(root)
+
+startDate = Calendar(root)
+endDate = Calendar(root)
+
+# buttons
+createElectionButton = tk.Button(root)
+loginButton = tk.Button(root)
+regButton = tk.Button(root)
+voteButton = tk.Button(root)
+voteScreenButton = tk.Button(root)
+createAnElectionButton = tk.Button(root)
+backButton = tk.Button(root)
+calButton = tk.Button(root)
 
 
-def load_blockchain():
-    pass
-    # blockchain.load_chain()
-    # blockchain.load_pending_tx()
+# labels
+unameLabel = tk.Label(root)
+pwordLabel = tk.Label(root)
+pubKeyLabel = tk.Label(root)
+privKeyLabel = tk.Label(root)
+electionLabel = tk.Label(root)
+
+# vars
+username = StringVar()
+password = StringVar()
+senderPubKey = StringVar()
+senderPrivKey = StringVar()
+elecID = StringVar()
+voteVar = StringVar()
+candidate = StringVar()
+electionName = StringVar()
+
+def main():
+    loginScreen()
+    root.mainloop()
 
 
-def send():
-    address = senderPublicKey.get()
-    SK = nacl.signing.SigningKey(senderPrivateKey.get(), encoder=nacl.encoding.HexEncoder)
-    j = {'sender': address,
-         'recipient': recipientPublicKey.get(),
-         'amount': float(send_amount.get())}
+def loginScreen():
+	root.geometry("500x500")
+	root.title("Identity Chain Client v1.0")
+	root.minsize(1000,800)
+	tk.Label(root, text="Welcome to the Identity Chain Client", font='Helvetica 18 bold').pack()
+
+
+	unameLabel = tk.Label(root, text="Username:")
+	unameLabel.pack()
+
+	uname = tk.Entry(root, textvariable = username)
+	uname.pack()
+
+	pwordLabel = tk.Label(root, text="Password:")
+	pwordLabel.pack()
+
+	pword = tk.Entry(root, show="*", textvariable = password)
+	pword.pack()
+
+	loginButton = tk.Button(root, text="Login", command=login)
+	loginButton.pack()
+
+	regButton = tk.Button(root, text="Register", command=regUser)
+	regButton.pack()
+
+def dashboard():
+	clearView()
+	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Dashbaord\n\nChoose an action!\n---------------", font='Helvetica 18 bold')
+	hello.pack()
+	# button
+	voteScreenButton = tk.Button(root, text="Go to Voting Dashboard", command=vote_dashboard)
+	createAnElectionButton = tk.Button(root, text="Go to Election Dashboard", command=election_dashboard)
+	voteScreenButton.pack()
+	createAnElectionButton.pack()
+
+def vote_dashboard():
+	clearView()
+	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Voting Dashbaord\n\nCast a vote!\n---------------", font='Helvetica 18 bold')
+	hello.pack()
+
+
+	# labels
+	pubKeyLabel = tk.Label(root, text=username.get()+"'s Public Key:")
+	privKeyLabel = tk.Label(root, text=username.get()+"'s Private Key:")
+	electionLabel = tk.Label(root, text="Election Key:")
+	voteLabel = tk.Label(root, text="Select your Vote")
+	
+	# EntryBoxes
+	pubKey = tk.Entry(root, textvariable = senderPubKey)
+	privKey = tk.Entry(root, textvariable = senderPrivKey)
+	electionID = tk.Entry(root, textvariable = elecID)
+	voteChoice = tk.Entry(root, textvariable = voteVar)
+	
+	# clears fields
+	pubKey.delete(0, END)
+	privKey.delete(0, END)
+	electionID.delete(0, END)
+	voteChoice.delete(0, END)
+
+	# button
+	voteButton = tk.Button(root, text="Vote", command=vote)
+
+	backButton = tk.Button(root, text="Back", command=dashboard)
+	
+
+	# display
+	pubKeyLabel.pack()
+	pubKey.pack()
+	privKeyLabel.pack()
+	privKey.pack()
+	electionLabel.pack()
+	electionID.pack()
+	voteLabel.pack()
+	voteChoice.pack()
+	voteButton.pack()
+	backButton.pack()
+
+
+def election_dashboard():
+	clearView()
+	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Election Dashbaord\n\nCreate an Election!\n---------------", font='Helvetica 18 bold')
+	hello.pack()
+	tk.Label(root, text='Election Name', font='Arial 18 bold').pack()
+	tk.Entry(root, textvariable = electionName).pack()
+
+
+	tk.Label(root, text='Choose Election Start Date', font='Arial 18 bold').pack()
+	startDate = Calendar(root, font="Arial 14", selectmode='day', locale='en_US',disabledforeground='red')
+	startDate.pack()
+
+	tk.Label(root, text='\n\nChoose Election End Date', font='Arial 18 bold').pack()
+	endDate = Calendar(root, font="Arial 14", selectmode='day', locale='en_US',disabledforeground='red', year=2020, month=5, day=21)
+	endDate.pack()
+	# labels
+	tk.Label(root, text="Select Candidates").pack()
+	candidateEntry = tk.Entry(root, textvariable = candidate)
+	candidateEntry.delete(0, END)
+	candidateEntry.pack()
+	tk.Button(root, text="Add Candidate", command=addCandidate).pack()
+	tk.Button(root, text="Create Election", command=createElection).pack()
+
+
+def addCandidate():
+	list = root.pack_slaves()
+	list[-1].destroy()
+	candidateList.append(candidate.get())
+	tk.Label(root, text=candidate.get()).pack()
+	tk.Button(root, text="Create Election", command=createElection).pack()
+
+def createElection():
+	print (electionName.get())
+	print (startDate.get_date())
+	print (endDate.get_date())
+	print (candidateList)
+	register = messagebox.showinfo("Thanks", "You have created an Election.")
+
+
+def vote():
+    SK = nacl.signing.SigningKey(senderPrivKey.get(), encoder=nacl.encoding.HexEncoder)
+    j = {'sender': senderPubKey.get(),
+         'recipient': elecID.get(),
+         'amount': float(voteVar.get())}
     msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
     sig = SK.sign(msg.encode())
     sig = sig[:len(sig) - len(msg)]
     j['signature'] = base64.b64encode(sig).decode()
     req = requests.post(f'http://{self_addr}:{self_port}/transactions/new', json=j)
     print("Transaction: ", req.content.decode())
-    # save_blockchain()
-    # load_blockchain()
+    messagebox.showinfo("", "Thanks, "+ username.get() +"! Your vote has been cast!")
+    clearView()
+    dashboard()
 
+	
 
-def save_nodes():
-    f = open("nodes/nodes.dat", "w")
-    lst = []
-    lst = nodes_list.get(1.0, END).splitlines()
-    json.dump(lst, f)
-    f.close()
+def checkLogin():
+	try:
+		f = open('users/' +username.get() + '.txt', 'r')
+		data = f.readlines()
+		getUname = data[0].rstrip()
+		getPword = data[1].rstrip()
 
+		if username.get() == getUname and password.get() == getPword:
+			clearView()
+			dashboard()
+			f.close()
+		else:
+			error = messagebox.showerror("Error", "Password incorrect.")
+			clearView()
+			loginScreen()
 
-def load_nodes():
-    file_object = open('nodes/nodes.dat', 'r')
-    nodes = json.load(file_object)
-    for e in nodes:
-        nodes_list.insert(INSERT, e + "\n")
+	except IOError:
+		error = messagebox.showerror("Error", "User does not exist.")
+		root.destroy()
 
+def login():
+	checkLogin()
 
-def discover_nodes():
-    try:
-        blockchain.discover_peers()
-    except:
-        print("Could not discover new nodes")
+def regUser():
+	clearView()
+	unameLabel = tk.Label(root, text="Username:")
+	unameLabel.pack()
 
+	uname = tk.Entry(root, textvariable = username)
+	uname.pack()
 
-def nodes_window():
-    nodes_w = Tk()
-    nodes_w.title("List nodes")
-    l = Label(nodes_w, text="List of nodes", font="Arial 14")
-    global nodes_list
-    nodes_list = Text(nodes_w)
-    nodes_list_save_button = Button(nodes_w, command=save_nodes, text="Save list of nodes")
-    nodes_discover_button = Button(nodes_w, command=discover_nodes, text="Discover new nodes")
-    l.pack(pady=10)
-    nodes_list.pack()
-    nodes_list_save_button.pack(pady=10)
-    nodes_discover_button.pack(pady=10)
-    load_nodes()
+	pwordLabel = tk.Label(root, text="Password:")
+	pwordLabel.pack()
 
+	pword = tk.Entry(root, show="*", textvariable = password)
+	pword.pack()
 
-def gen_pk():
-    global sk
-    sk = nacl.signing.SigningKey.generate()  # .encode(encoder=nacl.encoding.HexEncoder)
-    global pk
-    pk = sk.verify_key
-    pk = pk.encode(encoder=nacl.encoding.HexEncoder)
-    sk = sk.encode(encoder=nacl.encoding.HexEncoder)
-    pk_list.insert(INSERT, "=PRIVATE=\n")
-    pk_list.insert(INSERT, sk)
-    pk_list.insert(INSERT, "\n=PUBLIC=\n")
-    pk_list.insert(INSERT, pk)  # .encode(encoder=nacl.encoding.HexEncoder))
-    pk_list.insert(INSERT, "\n\n")
-    pass
+	regButton = tk.Button(root, text="Register", command=saveUser)
+	regButton.pack()
+	
+def saveUser():
+	f = open('users/' + username.get() + '.txt', 'w')
+	f.write(username.get())
+	f.write("\n")
+	f.write(password.get())
+	f.close()
+	register = messagebox.showinfo("Welcome", "You have registered.")
+	clearView()
+	loginScreen()
 
+def clearView():
+    list = root.pack_slaves()
+    for l in list:
+    	l.destroy()
 
-def new_privkeys():
-    pk_w = Tk()
-    pk_w.title("Generate new private keys")
-    l = Label(pk_w, text="Your private keys", font="Arial 14")
-    global pk_list
-    pk_list = Text(pk_w)
-    pk_gen_new = Button(pk_w, command=gen_pk, text="Generate new private key")
-    l.pack(pady=10)
-    pk_list.pack()
-    pk_gen_new.pack(pady=10)
-
-
-menubar = Menu(root)
-root.config(menu=menubar)
-
-fileMenu = Menu(menubar)
-fileMenu.add_command(label="Save", command=save_blockchain)
-fileMenu.add_command(label="List nodes", command=nodes_window)
-menubar.add_cascade(label="File", menu=fileMenu)
-walletmenu = Menu(menubar)
-walletmenu.add_command(label="Generate private keys", command=new_privkeys)
-menubar.add_cascade(label="Wallet", menu=walletmenu)
-# Send section
-l1 = Label(text="Отправить", font="Arial 14")
-l1.grid(column=1, row=0)
-
-lbl = Label(text="Recipient: ")
-lbl.grid(column=0, row=1)
-recipientPublicKey = Entry(width=50)
-recipientPublicKey.grid(column=1, row=1)
-
-lbl1 = Label(text="Amount: ")
-lbl1.grid(column=0, row=2)
-send_amount = Entry(width=50, text="Amount")
-send_amount.grid(column=1, row=2)
-
-lbl2 = Label(text="Public key: ")
-lbl2.grid(column=0, row=3)
-senderPublicKey = Entry(width=50, text="Public key")
-senderPublicKey.grid(column=1, row=3)
-
-lbl3 = Label(text="Private key: ")
-lbl3.grid(column=0, row=4)
-senderPrivateKey = Entry(width=50, text="Private key")
-senderPrivateKey.grid(column=1, row=4)
-
-send_button = Button(text="Send TX", command=send)
-send_button.grid(column=1, row=5)
-
-# l1.pack(pady=10)
-# lbl.pack()
-# recipientPublicKey.pack()
-# lbl1.pack()
-# send_amount.pack()
-# lbl2.pack()
-# senderPublicKey.pack()
-# lbl3.pack()
-# senderPrivateKey.pack()
-# send_button.pack(pady=10)
-
-root.mainloop()
-nodes_w.mainloop()
+if __name__ == "__main__":
+    main()
