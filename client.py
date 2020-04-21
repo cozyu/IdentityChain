@@ -10,6 +10,7 @@ from tkinter.ttk import *
 from tkinter import messagebox
 from tkcalendar import Calendar, DateEntry
 from functools import partial
+from datetime import datetime
 
 import base64
 import json
@@ -139,9 +140,9 @@ def vote_dashboard():
 	
 	# EntryBoxes
 	pubKey = tk.Entry(root, textvariable = senderPubKey,  width=60)
-	senderPubKey.set(data[5])
+	senderPubKey.set(data[5].rstrip())
 	privKey = tk.Entry(root, textvariable = senderPrivKey, width=60)
-	senderPrivKey.set(data[3])
+	senderPrivKey.set(data[3].rstrip())
 	electionID = tk.Entry(root, textvariable = elecID)
 	voteChoice = tk.Entry(root, textvariable = voteVar)
 	
@@ -170,7 +171,7 @@ def vote_dashboard():
 def election_dashboard():
 	clearView()
 	def electionCallWrapper():
-		createElection(sDate.get_date(), eDate.get_date())
+		createElection(sDate.get_date().strftime("%m/%d/%Y"), eDate.get_date().strftime("%m/%d/%Y"))
 	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Election Dashbaord\n\nCreate an Election!\n---------------", font='Helvetica 18 bold')
 	hello.pack()
 	tk.Label(root, text='Election Name', font='Arial 18 bold').pack()
@@ -207,10 +208,22 @@ def createElection(sdate, edate):
 	print (sdate)
 	print (edate)
 	print (electionName.get())
-	print (data[5])
-	print (data[3])
+	print (data[5].rstrip())
+	print (data[3].rstrip())
 	print (candidateList)
 	register = messagebox.showinfo("Thanks", "You have created an Election.")
+	######
+	SK = nacl.signing.SigningKey(data[3].rstrip(), encoder=nacl.encoding.HexEncoder)
+	electionKey = nacl.signing.SigningKey.generate().encode(encoder=nacl.encoding.HexEncoder)
+	j = {'sender': data[5].rstrip(), 'recipient': electionKey.decode("utf-8"),'amount': 0, 'script': {'type':2,'candidates':candidateList, 'start date':sdate, 'end date':edate}}
+
+	msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
+	sig = SK.sign(msg.encode())
+	sig = sig[:len(sig) - len(msg)]
+	j['signature'] = base64.b64encode(sig).decode()
+	req = requests.post(f'http://{self_addr}:{self_port}/vote/new', json=j)
+
+	######
 	dashboard()
 
 def vote():
@@ -274,7 +287,7 @@ def regUser():
 	
 def saveUser():
 	global sk
-	sk = nacl.signing.SigningKey.generate()  # .encode(encoder=nacl.encoding.HexEncoder)
+	sk = nacl.signing.SigningKey.generate()
 	global pk
 	pk = sk.verify_key
 	pk = pk.encode(encoder=nacl.encoding.HexEncoder)
