@@ -231,7 +231,7 @@ def vote():
     j = {'sender': senderPubKey.get(),
         'recipient': elecID.get(),
         'amount': 0,
-        'script': {'type':1,'vote':int(voteVar.get())}}
+        'script': {'type':1,'vote':voteVar.get()}}
 
     msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
     sig = SK.sign(msg.encode())
