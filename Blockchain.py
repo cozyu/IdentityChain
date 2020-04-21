@@ -152,6 +152,36 @@ class Blockchain(object):
         self.save_pending_tx()
         return self.last_block['index'] + 1
 
+    def new_election(self, startDate, endDate, candidates, name, creatorPubKey, creatorPrivKey):
+        if (sender != "0") and (sender not in self.balances()):
+            return (False, 'Sender not registered with blockchain')
+
+        # Check sufficient funds
+        if (sender != "0") and (self.balances()[sender] < amount):
+            return (False, 'Insufficient amount in account')
+        if (amount < 0):
+            return (False, 'Negative amount of coins')
+
+        if sender != "0":
+            j = {'sender': sender, 'recipient': recipient, 'amount': amount}
+            msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
+            mysignature = base64.b64decode(signature.encode())
+            pub_key = nacl.signing.VerifyKey(sender, encoder=nacl.encoding.HexEncoder)
+            if not pub_key.verify(msg.encode(), mysignature):
+                print("Invalid signature")
+                return (False, "Invalid signature")
+        sig = signature
+        self.current_transactions.append({
+            'sender': sender,
+            'recipient': recipient,
+            'amount': amount,
+            'signature': sig,
+        })
+        self.save_pending_tx()
+        return self.last_block['index'] + 1
+
+
+
     def register_user(self,sender):
         self.current_transactions.append({
             'sender': sender,
