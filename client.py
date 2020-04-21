@@ -6,9 +6,11 @@ import random
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import *
+from tkinter.ttk import *
 from tkinter import messagebox
 from tkcalendar import Calendar, DateEntry
-
+from functools import partial
+from datetime import datetime
 
 import base64
 import json
@@ -41,6 +43,9 @@ style.theme_use('clam')
 candidateList = []
 
 
+eDate = DateEntry(root)
+sDate = DateEntry(root)
+
 # tkEntry
 uname = tk.Entry(root)
 pword = tk.Entry(root)
@@ -49,9 +54,6 @@ privKey = tk.Entry(root)
 electionID = tk.Entry(root)
 voteChoice = tk.Entry(root)
 candidateEntry = tk.Entry(root)
-
-startDate = Calendar(root)
-endDate = Calendar(root)
 
 # buttons
 createElectionButton = tk.Button(root)
@@ -80,6 +82,9 @@ elecID = StringVar()
 voteVar = StringVar()
 candidate = StringVar()
 electionName = StringVar()
+
+data = []
+
 
 def main():
     loginScreen()
@@ -125,7 +130,7 @@ def vote_dashboard():
 	clearView()
 	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Voting Dashbaord\n\nCast a vote!\n---------------", font='Helvetica 18 bold')
 	hello.pack()
-
+	print (data)
 
 	# labels
 	pubKeyLabel = tk.Label(root, text=username.get()+"'s Public Key:")
@@ -134,22 +139,22 @@ def vote_dashboard():
 	voteLabel = tk.Label(root, text="Select your Vote")
 	
 	# EntryBoxes
-	pubKey = tk.Entry(root, textvariable = senderPubKey)
-	privKey = tk.Entry(root, textvariable = senderPrivKey)
+	pubKey = tk.Entry(root, textvariable = senderPubKey,  width=60)
+	senderPubKey.set(data[5].rstrip())
+	privKey = tk.Entry(root, textvariable = senderPrivKey, width=60)
+	senderPrivKey.set(data[3].rstrip())
 	electionID = tk.Entry(root, textvariable = elecID)
 	voteChoice = tk.Entry(root, textvariable = voteVar)
 	
-	# clears fields
-	pubKey.delete(0, END)
-	privKey.delete(0, END)
-	electionID.delete(0, END)
-	voteChoice.delete(0, END)
 
 	# button
 	voteButton = tk.Button(root, text="Vote", command=vote)
-
 	backButton = tk.Button(root, text="Back", command=dashboard)
 	
+
+	# clears fields
+	electionID.delete(0, END)
+	voteChoice.delete(0, END)
 
 	# display
 	pubKeyLabel.pack()
@@ -163,9 +168,10 @@ def vote_dashboard():
 	voteButton.pack()
 	backButton.pack()
 
-
 def election_dashboard():
 	clearView()
+	def electionCallWrapper():
+		createElection(sDate.get_date().strftime("%m/%d/%Y"), eDate.get_date().strftime("%m/%d/%Y"))
 	hello = tk.Label(root, text=username.get()+ ", Welcome to the Indentity Chain Election Dashbaord\n\nCreate an Election!\n---------------", font='Helvetica 18 bold')
 	hello.pack()
 	tk.Label(root, text='Election Name', font='Arial 18 bold').pack()
@@ -173,35 +179,51 @@ def election_dashboard():
 
 
 	tk.Label(root, text='Choose Election Start Date', font='Arial 18 bold').pack()
-	startDate = Calendar(root, font="Arial 14", selectmode='day', locale='en_US',disabledforeground='red')
-	startDate.pack()
+
+	sDate = DateEntry(root, locale='en_US', date_pattern='mm/dd/y')
+	sDate.pack()
 
 	tk.Label(root, text='\n\nChoose Election End Date', font='Arial 18 bold').pack()
-	endDate = Calendar(root, font="Arial 14", selectmode='day', locale='en_US',disabledforeground='red', year=2020, month=5, day=21)
-	endDate.pack()
-	# labels
+	eDate = DateEntry(root, locale='en_US', date_pattern='mm/dd/y')
+	eDate.pack()
+	
 	tk.Label(root, text="Select Candidates").pack()
 	candidateEntry = tk.Entry(root, textvariable = candidate)
 	candidateEntry.delete(0, END)
 	candidateEntry.pack()
+
 	tk.Button(root, text="Add Candidate", command=addCandidate).pack()
-	tk.Button(root, text="Create Election", command=createElection).pack()
+	tk.Button(root, text="Create Election", font='Arial 18 bold', command = electionCallWrapper).pack(side=BOTTOM, fill="x")
 
 
 def addCandidate():
-	list = root.pack_slaves()
-	list[-1].destroy()
+	# list = root.pack_slaves()
+	# list[-1].destroy()
 	candidateList.append(candidate.get())
 	tk.Label(root, text=candidate.get()).pack()
-	tk.Button(root, text="Create Election", command=createElection).pack()
+	# tk.Button(root, text="Create Election", command=electionCallWrapper).pack()
 
-def createElection():
+def createElection(sdate, edate):
 	# Need to use these VARS to publish election to blockchain
+	print (sdate)
+	print (edate)
 	print (electionName.get())
-	print (startDate.get_date())
-	print (endDate.get_date())
+	print (data[5].rstrip())
+	print (data[3].rstrip())
 	print (candidateList)
 	register = messagebox.showinfo("Thanks", "You have created an Election.")
+	######
+	SK = nacl.signing.SigningKey(data[3].rstrip(), encoder=nacl.encoding.HexEncoder)
+	electionKey = nacl.signing.SigningKey.generate().encode(encoder=nacl.encoding.HexEncoder)
+	j = {'sender': data[5].rstrip(), 'recipient': electionKey.decode("utf-8"),'amount': 0, 'script': {'type':2,'candidates':candidateList, 'start date':sdate, 'end date':edate}}
+
+	msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
+	sig = SK.sign(msg.encode())
+	sig = sig[:len(sig) - len(msg)]
+	j['signature'] = base64.b64encode(sig).decode()
+	req = requests.post(f'http://{self_addr}:{self_port}/vote/new', json=j)
+
+	######
 	dashboard()
 
 def vote():
@@ -221,9 +243,9 @@ def vote():
     clearView()
     dashboard()
 
-	
 
 def checkLogin():
+	global data
 	try:
 		f = open('users/' +username.get() + '.txt', 'r')
 		data = f.readlines()
@@ -264,10 +286,20 @@ def regUser():
 	regButton.pack()
 	
 def saveUser():
+	global sk
+	sk = nacl.signing.SigningKey.generate()
+	global pk
+	pk = sk.verify_key
+	pk = pk.encode(encoder=nacl.encoding.HexEncoder)
+	sk = sk.encode(encoder=nacl.encoding.HexEncoder)
 	f = open('users/' + username.get() + '.txt', 'w')
 	f.write(username.get())
 	f.write("\n")
 	f.write(password.get())
+	f.write("\n=PRIVATE=\n")
+	f.write(sk.decode("utf-8"))
+	f.write("\n=PUBLIC=\n")
+	f.write(pk.decode("utf-8"))
 	f.close()
 	register = messagebox.showinfo("Welcome", "You have registered.")
 	clearView()
