@@ -201,19 +201,20 @@ def createElection():
 	print (endDate.get_date())
 	print (candidateList)
 	register = messagebox.showinfo("Thanks", "You have created an Election.")
-	dashboard()
 
 
 def vote():
     SK = nacl.signing.SigningKey(senderPrivKey.get(), encoder=nacl.encoding.HexEncoder)
     j = {'sender': senderPubKey.get(),
-         'recipient': elecID.get(),
-         'amount': float(voteVar.get())}
-    msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]}'
+        'recipient': elecID.get(),
+        'amount': 0,
+        'script': {'type':1,'vote':int(voteVar.get())}}
+
+    msg = f'sender:{j["sender"]},recipient:{j["recipient"]},amount:{j["amount"]},script:{j["script"]}'
     sig = SK.sign(msg.encode())
     sig = sig[:len(sig) - len(msg)]
     j['signature'] = base64.b64encode(sig).decode()
-    req = requests.post(f'http://{self_addr}:{self_port}/transactions/new', json=j)
+    req = requests.post(f'http://{self_addr}:{self_port}/vote/new', json=j)
     print("Transaction: ", req.content.decode())
     messagebox.showinfo("", "Thanks, "+ username.get() +"! Your vote has been cast!")
     clearView()
