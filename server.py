@@ -148,7 +148,7 @@ def new_election_transaction():
     print(type(sig))
     sig = sig
 
-    index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'], sig)
+    index = blockchain.new_election(values['startDate'], values['endDate'], values['candidates'], sig)
 
     if index:
         response = {'message': f'Transaction will be added to Block {index}'}
